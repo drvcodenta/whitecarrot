@@ -16,8 +16,13 @@ CREATE TABLE jobs (
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   location TEXT,
-  job_type TEXT CHECK (job_type IN ('full-time', 'part-time', 'contract', 'remote')),
+  work_policy TEXT CHECK (work_policy IN ('Remote', 'Hybrid', 'On-site')),
   department TEXT,
+  employment_type TEXT CHECK (employment_type IN ('Full time', 'Part time', 'Contract')),
+  experience_level TEXT CHECK (experience_level IN ('Junior', 'Mid-level', 'Senior')),
+  job_type TEXT CHECK (job_type IN ('Permanent', 'Temporary', 'Internship')),
+  salary_range TEXT,
+  job_slug TEXT UNIQUE,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
