@@ -1,0 +1,66 @@
+{
+    "app": {
+        "name": "Careers Page Builder",
+        "multiTenant": true,
+        "routing": {
+            "public": "/[companySlug]/careers",
+            "editor": "/[companySlug]/edit",
+            "preview": "/[companySlug]/preview"
+        }
+    },
+    "entities": {
+        "Company": {
+            "id": "uuid",
+            "slug": "string",
+            "name": "string",
+            "theme": {
+                "primaryColor": "string",
+                "secondaryColor": "string",
+                "accentColor": "string",
+                "logoUrl": "string",
+                "bannerUrl": "string",
+                "font": "string"
+            },
+            "seo": {
+                "title": "string",
+                "description": "string",
+                "keywords": [
+                    "string"
+                ]
+            },
+            "status": "draft | published"
+        },
+        "Section": {
+            "id": "uuid",
+            "companyId": "uuid",
+            "type": "header | about | life | team | values | jobs | footer",
+            "order": "number",
+            "content": "json"
+        },
+        "Job": {
+            "id": "uuid",
+            "companyId": "uuid",
+            "title": "string",
+            "location": "string",
+            "jobType": "full-time | part-time | contract",
+            "department": "string",
+            "remote": "boolean"
+        }
+    },
+    "features": {
+        "editor": {
+            "dragAndDrop": true,
+            "previewMode": true,
+            "draftSave": true
+        },
+        "candidateView": {
+            "filters": [
+                "location",
+                "jobType",
+                "department"
+            ],
+            "search": true,
+            "mobileDrawer": true
+        }
+    }
+}

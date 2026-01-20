@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #1D4ED8;
+  --secondary: #1E3A5F;
+  --accent: #0EA5E9;
+  --bg: #F1F5F9;
+  --surface: #FFFFFF;
+  --text-heading: #1E293B;
+  --text-body: #4B5563;
+  --text-muted: #9CA3AF;
+  --border: #E5E7EB;
+  --badge-fulltime: #22C55E;
+  --badge-parttime: #F97316;
+  --badge-remote: #3B82F6;
+  --badge-contract: #8B5CF6;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text-body);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --font-sans: 'Inter', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-body);
+  font-family: 'Inter', Arial, sans-serif;
+}
