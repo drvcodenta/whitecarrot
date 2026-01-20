@@ -47,16 +47,26 @@ export function Editor({ company: init }: Props) {
 
     const save = async () => {
         setSaving(true);
-        await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta }).eq('id', c.id);
+        const { error } = await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta }).eq('id', c.id);
         setSaving(false);
-        alert('Saved!');
+        if (error) {
+            alert('Save failed: ' + error.message);
+            console.error('Save error:', error);
+        } else {
+            alert('Saved!');
+        }
     };
 
     const publish = async () => {
         setSaving(true);
-        await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta, status: 'published' }).eq('id', c.id);
+        const { error } = await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta, status: 'published' }).eq('id', c.id);
         setSaving(false);
-        window.location.href = `/${c.slug}/careers`;
+        if (error) {
+            alert('Publish failed: ' + error.message);
+            console.error('Publish error:', error);
+        } else {
+            window.location.href = `/${c.slug}/careers`;
+        }
     };
 
     return (
@@ -68,7 +78,6 @@ export function Editor({ company: init }: Props) {
                     <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">{c.name}</span>
                 </div>
                 <div className="flex gap-2">
-                    <a href={`/${c.slug}/preview`} target="_blank" className="px-3 py-1.5 border rounded text-sm" rel="noreferrer">Preview</a>
                     <button onClick={save} disabled={saving} className="px-3 py-1.5 border rounded text-sm">{saving ? 'Saving...' : 'Save Draft'}</button>
                     <button onClick={publish} disabled={saving} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Publish</button>
                 </div>

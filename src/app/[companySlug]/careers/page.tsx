@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { CareerPage } from '@/components/CareerPage';
 
+// Disable caching so changes appear immediately after publishing
+export const dynamic = 'force-dynamic';
+
 export default async function CareersPage({
     params,
 }: {

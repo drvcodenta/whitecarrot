@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Company, Job } from '@/lib/types';
+import { Company, Job, Section } from '@/lib/types';
 import { JobCard } from './JobCard';
 import { FilterDrawer } from './FilterDrawer';
 import { MobileDrawer } from './MobileDrawer';
@@ -10,7 +10,7 @@ type Props = { company: Company; jobs: Job[] };
 
 export function CareerPage({ company, jobs }: Props) {
     const [filtered, setFiltered] = useState(jobs);
-    const { theme } = company;
+    const { theme, sections } = company;
 
     const locs = [...new Set(jobs.map(j => j.location).filter(Boolean))];
     const depts = [...new Set(jobs.map(j => j.department).filter(Boolean))];
@@ -24,16 +24,18 @@ export function CareerPage({ company, jobs }: Props) {
         setFiltered(r);
     };
 
+    const hasSection = (type: Section['type']) => sections?.some(s => s.type === type);
+
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
+            {/* Header - always shown */}
             <header className="sticky top-0 z-30 bg-white shadow-sm">
                 <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         {company.logo_url ? (
                             <img src={company.logo_url} alt={company.name} className="w-10 h-10 rounded" />
                         ) : (
-                            <div className="w-10 h-10 rounded flex items-center justify-center text-white font-bold" style={{ backgroundColor: theme.accentColor }}>
+                            <div className="w-10 h-10 rounded flex items-center justify-center text-white font-bold" style={{ backgroundColor: theme.primaryColor }}>
                                 {company.name[0]}
                             </div>
                         )}
@@ -43,53 +45,114 @@ export function CareerPage({ company, jobs }: Props) {
                 </div>
             </header>
 
-            {/* Hero */}
-            <section className="py-12 md:py-16 text-center text-white" style={{ backgroundColor: theme.secondaryColor }}>
-                <h1 className="text-2xl md:text-3xl font-bold mb-2">JOIN OUR TEAM</h1>
-                <p className="text-blue-100">Building the future, together.</p>
-            </section>
+            {/* Render sections in order from database */}
+            {sections?.map(s => (
+                <div key={s.id}>
+                    {s.type === 'header' && (
+                        <section className="py-12 md:py-16 text-center text-white" style={{ backgroundColor: theme.secondaryColor }}>
+                            <h1 className="text-2xl md:text-3xl font-bold mb-2">JOIN OUR TEAM</h1>
+                            <p className="opacity-80">Building the future, together.</p>
+                        </section>
+                    )}
 
-            {/* Life at Company */}
-            <section className="max-w-4xl mx-auto px-4 py-8">
-                <h2 className="text-lg font-bold text-gray-800 mb-4">LIFE AT COMPANY</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="bg-gray-200 rounded-lg aspect-square flex items-center justify-center text-gray-400">
-                            📷
-                        </div>
-                    ))}
-                </div>
-            </section>
+                    {s.type === 'about' && (
+                        <section className="max-w-4xl mx-auto px-4 py-8">
+                            <h2 className="text-lg font-bold text-gray-800 mb-4">ABOUT US</h2>
+                            <p className="text-gray-600">Welcome to {company.name}. We're building the future, together.</p>
+                        </section>
+                    )}
 
-            {/* Open Roles */}
-            <main className="max-w-4xl mx-auto px-4 pb-8" id="open-roles">
-                <h2 className="text-lg font-bold text-gray-800 mb-4">OPEN ROLES</h2>
-                <FilterDrawer locations={locs} departments={depts} onFilter={handleFilter} />
-                <div className="space-y-3" role="list">
-                    {filtered.length > 0 ? (
-                        filtered.map(job => <JobCard key={job.id} job={job} primaryColor={theme.primaryColor} />)
-                    ) : (
-                        <p className="text-gray-500 text-center py-8">No jobs match your filters.</p>
+                    {s.type === 'life' && (
+                        <section className="max-w-4xl mx-auto px-4 py-8">
+                            <h2 className="text-lg font-bold text-gray-800 mb-4">LIFE AT {company.name.toUpperCase()}</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                {[1, 2, 3, 4, 5, 6].map(i => (
+                                    <div key={i} className="bg-gray-200 rounded-lg aspect-square flex items-center justify-center text-gray-400">
+                                        📷
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {s.type === 'team' && (
+                        <section className="max-w-4xl mx-auto px-4 py-8">
+                            <h2 className="text-lg font-bold text-gray-800 mb-4">OUR TEAM</h2>
+                            <div className="flex gap-4 flex-wrap">
+                                {['CEO', 'CTO', 'Designer'].map(role => (
+                                    <div key={role} className="text-center">
+                                        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 mb-2">👤</div>
+                                        <p className="text-sm text-gray-600">{role}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {s.type === 'values' && (
+                        <section className="max-w-4xl mx-auto px-4 py-8">
+                            <h2 className="text-lg font-bold text-gray-800 mb-4">OUR VALUES</h2>
+                            <div className="flex gap-3 flex-wrap">
+                                {['Innovation', 'Integrity', 'Growth', 'Community'].map(v => (
+                                    <span key={v} className="px-4 py-2 rounded-full text-sm" style={{ backgroundColor: theme.primaryColor + '20', color: theme.primaryColor }}>{v}</span>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {s.type === 'jobs' && (
+                        <main className="max-w-4xl mx-auto px-4 py-8" id="open-roles">
+                            <h2 className="text-lg font-bold text-gray-800 mb-4">OPEN ROLES</h2>
+                            <FilterDrawer locations={locs} departments={depts} onFilter={handleFilter} />
+                            <div className="space-y-3" role="list">
+                                {filtered.length > 0 ? (
+                                    filtered.map(job => <JobCard key={job.id} job={job} primaryColor={theme.primaryColor} />)
+                                ) : (
+                                    <p className="text-gray-500 text-center py-8">No jobs match your filters.</p>
+                                )}
+                            </div>
+                        </main>
+                    )}
+
+                    {s.type === 'footer' && (
+                        <footer className="bg-gray-100 py-8 border-t">
+                            <div className="max-w-4xl mx-auto px-4 text-center">
+                                <div className="flex justify-center gap-3 mb-4">
+                                    <a href="#" className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center" aria-label="Facebook">f</a>
+                                    <a href="#" className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center" aria-label="Twitter">X</a>
+                                    <a href="#" className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center" aria-label="LinkedIn">in</a>
+                                </div>
+                                <nav className="flex justify-center gap-4 text-sm text-gray-600">
+                                    <a href="#">About</a>
+                                    <a href="#">Contact</a>
+                                    <a href="#">Privacy</a>
+                                </nav>
+                            </div>
+                        </footer>
                     )}
                 </div>
-            </main>
+            ))}
 
-            {/* Footer */}
-            <footer className="bg-gray-100 py-8 border-t">
-                <div className="max-w-4xl mx-auto px-4 text-center">
-                    <p className="text-gray-500 text-sm mb-4">FOOTER</p>
-                    <div className="flex justify-center gap-3 mb-4">
-                        <a href="#" className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center" aria-label="Facebook">f</a>
-                        <a href="#" className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center" aria-label="Twitter">X</a>
-                        <a href="#" className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center" aria-label="LinkedIn">in</a>
-                    </div>
-                    <nav className="flex justify-center gap-4 text-sm text-gray-600">
-                        <a href="#">About</a>
-                        <a href="#">Contact</a>
-                        <a href="#">Privacy</a>
-                    </nav>
-                </div>
-            </footer>
+            {/* Fallback if no sections defined */}
+            {(!sections || sections.length === 0) && (
+                <>
+                    <section className="py-12 md:py-16 text-center text-white" style={{ backgroundColor: theme.secondaryColor }}>
+                        <h1 className="text-2xl md:text-3xl font-bold mb-2">JOIN OUR TEAM</h1>
+                        <p className="opacity-80">Building the future, together.</p>
+                    </section>
+                    <main className="max-w-4xl mx-auto px-4 py-8" id="open-roles">
+                        <h2 className="text-lg font-bold text-gray-800 mb-4">OPEN ROLES</h2>
+                        <FilterDrawer locations={locs} departments={depts} onFilter={handleFilter} />
+                        <div className="space-y-3" role="list">
+                            {filtered.length > 0 ? (
+                                filtered.map(job => <JobCard key={job.id} job={job} primaryColor={theme.primaryColor} />)
+                            ) : (
+                                <p className="text-gray-500 text-center py-8">No jobs match your filters.</p>
+                            )}
+                        </div>
+                    </main>
+                </>
+            )}
         </div>
     );
 }
