@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export default function AdminLogin() {
     const [isRegistering, setIsRegistering] = useState(false);
-    const [companyName, setCompanyName] = useState('');
-    const [companySlug, setCompanySlug] = useState('');
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [selectedCompanyId, setSelectedCompanyId] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -15,12 +15,30 @@ export default function AdminLogin() {
     const router = useRouter();
     const supabase = createClient();
 
+    useEffect(() => {
+        async function fetchCompanies() {
+            // Fetch companies that don't have an owner yet
+            const { data } = await supabase
+                .from('companies')
+                .select('id, name, slug')
+                .is('owner_id', null);
+            if (data) setCompanies(data);
+        }
+        fetchCompanies();
+    }, [supabase]);
+
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
 
         if (isRegistering) {
+            if (!selectedCompanyId) {
+                setError('Please select a company to manage.');
+                setLoading(false);
+                return;
+            }
+
             // Sign up
             const { data: authData, error: signUpError } = await supabase.auth.signUp({
                 email,
@@ -34,20 +52,18 @@ export default function AdminLogin() {
             }
 
             if (authData.user) {
-                // Create company
-                const { error: companyError } = await supabase
+                // Update company with owner_id
+                const { data: company, error: companyError } = await supabase
                     .from('companies')
-                    .insert({
-                        name: companyName,
-                        slug: companySlug.toLowerCase().replace(/\s+/g, '-'),
-                        owner_id: authData.user.id,
-                        status: 'draft'
-                    });
+                    .update({ owner_id: authData.user.id })
+                    .eq('id', selectedCompanyId)
+                    .select('slug')
+                    .single();
 
                 if (companyError) {
-                    setError('Account created, but company setup failed: ' + companyError.message);
+                    setError('Account created, but company association failed: ' + companyError.message);
                 } else {
-                    router.push(`/${companySlug}/edit`);
+                    router.push(`/${company.slug}/edit`);
                 }
             }
         } else {
@@ -83,36 +99,27 @@ export default function AdminLogin() {
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">{isRegistering ? 'Recruiter Sign Up' : 'Recruiter Login'}</h1>
                     <p className="text-gray-500 mt-2">
-                        {isRegistering ? 'Create your company careers page' : 'Manage your company careers page'}
+                        {isRegistering ? 'Choose a company to manage' : 'Manage your company careers page'}
                     </p>
                 </div>
 
                 <form onSubmit={handleAuth} className="space-y-6">
                     {isRegistering && (
-                        <>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={companyName}
-                                    onChange={(e) => setCompanyName(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                    placeholder="Acme Inc."
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Company Slug</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={companySlug}
-                                    onChange={(e) => setCompanySlug(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                    placeholder="acme-inc"
-                                />
-                            </div>
-                        </>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Company</label>
+                            <select
+                                required
+                                value={selectedCompanyId}
+                                onChange={(e) => setSelectedCompanyId(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-white transition-all cursor-pointer"
+                            >
+                                <option value="">-- Select a company --</option>
+                                {companies.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name} ({c.slug})</option>
+                                ))}
+                            </select>
+                            <p className="mt-2 text-xs text-gray-500 italic">Only showing companies without an active recruiter.</p>
+                        </div>
                     )}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
