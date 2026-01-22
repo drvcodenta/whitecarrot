@@ -20,7 +20,7 @@ export default function Home() {
               Discover your next career move. Browse open roles across various locations.
             </p>
             <Link
-              href="/berlin/careers"
+              href="/jobs"
               className="inline-block bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition-colors"
             >
               Browse Jobs

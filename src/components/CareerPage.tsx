@@ -25,12 +25,6 @@ export function CareerPage({ company, jobs }: Props) {
         experienceLevel: string;
         search: string
     }) => {
-        // Special requirement for Berlin filter
-        if (f.location === 'Berlin, Germany') {
-            window.location.href = '/berlin/careers';
-            return;
-        }
-
         let r = jobs;
         if (f.location) r = r.filter(j => j.location === f.location);
         if (f.jobType) r = r.filter(j => j.job_type === f.jobType);
