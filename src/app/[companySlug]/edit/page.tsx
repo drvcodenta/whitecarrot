@@ -16,14 +16,18 @@ export default async function EditPage({
         redirect('/login');
     }
 
-    // Fetch company (RLS will check ownership)
+    // Fetch company and strictly check ownership
     const { data: company, error } = await supabase
         .from('companies')
         .select('*')
         .eq('slug', companySlug)
+        .eq('owner_id', user.id) // Ensure the logged-in user is the actual recruiter for this company
         .single();
 
-    if (!company || error) notFound();
+    if (error || !company) {
+        // If company exists but owned by someone else, or doesn't exist at all
+        redirect('/login');
+    }
 
     return <Editor company={company} />;
 }
