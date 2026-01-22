@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase';
 type Props = { company: Company };
 type Tab = 'settings' | 'structure' | 'preview';
 
-const SECTION_TYPES: Section['type'][] = ['header', 'about', 'life', 'team', 'values', 'jobs', 'footer'];
+const SECTION_TYPES: Section['type'][] = ['header', 'about', 'life', 'team', 'values', 'jobs', 'footer', 'video'];
 const COLORS = ['#1D4ED8', '#0EA5E9', '#059669', '#F59E0B', '#EF4444', '#EC4899'];
 
 // Helper function to extract YouTube video ID from various URL formats
@@ -244,40 +244,69 @@ export function Editor({ company: init }: Props) {
             <h2 className="font-semibold mb-4 text-lg">Page Structure</h2>
             <div className="space-y-3 mb-6" role="list" aria-label="Page sections">
                 {c.sections.map((s, i) => (
-                    <div
-                        key={s.id}
-                        className="bg-white rounded-xl border shadow-sm p-3 flex justify-between items-center"
-                        role="listitem"
-                    >
-                        <div className="flex items-center gap-3">
-                            <span className="text-gray-400 text-lg" aria-hidden="true">☰</span>
-                            <span className="font-medium capitalize text-base">{s.type}</span>
+                    <div key={s.id}>
+                        <div
+                            className="bg-white rounded-xl border shadow-sm p-3 flex justify-between items-center"
+                            role="listitem"
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="text-gray-400 text-lg" aria-hidden="true">☰</span>
+                                <span className="font-medium capitalize text-base">{s.type === 'video' ? '📹 Video' : s.type}</span>
+                            </div>
+                            <div className="flex gap-1">
+                                <button
+                                    onClick={() => moveSection(s.id, 'up')}
+                                    disabled={i === 0}
+                                    className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    aria-label={`Move ${s.type} section up`}
+                                >
+                                    ↑
+                                </button>
+                                <button
+                                    onClick={() => moveSection(s.id, 'down')}
+                                    disabled={i === c.sections.length - 1}
+                                    className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    aria-label={`Move ${s.type} section down`}
+                                >
+                                    ↓
+                                </button>
+                                <button
+                                    onClick={() => rmSection(s.id)}
+                                    className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    aria-label={`Remove ${s.type} section`}
+                                >
+                                    ×
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex gap-1">
-                            <button
-                                onClick={() => moveSection(s.id, 'up')}
-                                disabled={i === 0}
-                                className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                aria-label={`Move ${s.type} section up`}
-                            >
-                                ↑
-                            </button>
-                            <button
-                                onClick={() => moveSection(s.id, 'down')}
-                                disabled={i === c.sections.length - 1}
-                                className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                aria-label={`Move ${s.type} section down`}
-                            >
-                                ↓
-                            </button>
-                            <button
-                                onClick={() => rmSection(s.id)}
-                                className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
-                                aria-label={`Remove ${s.type} section`}
-                            >
-                                ×
-                            </button>
-                        </div>
+                        {/* YouTube URL input for video sections */}
+                        {s.type === 'video' && (
+                            <div className="bg-white rounded-xl border shadow-sm p-3 mt-2 ml-6">
+                                <label className="text-xs text-gray-500 block mb-1">YouTube URL</label>
+                                <input
+                                    type="url"
+                                    placeholder="https://www.youtube.com/watch?v=..."
+                                    value={(s.content?.youtubeUrl as string) || ''}
+                                    onChange={e => {
+                                        setC(prev => ({
+                                            ...prev,
+                                            sections: prev.sections.map(sec =>
+                                                sec.id === s.id
+                                                    ? { ...sec, content: { ...sec.content, youtubeUrl: e.target.value } }
+                                                    : sec
+                                            )
+                                        }));
+                                    }}
+                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                {(s.content?.youtubeUrl as string) && getYouTubeVideoId(s.content.youtubeUrl as string) && (
+                                    <p className="text-xs text-green-600 mt-1">✓ Valid YouTube URL</p>
+                                )}
+                                {(s.content?.youtubeUrl as string) && !getYouTubeVideoId(s.content.youtubeUrl as string) && (
+                                    <p className="text-xs text-red-500 mt-1">⚠ Invalid YouTube URL format</p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
@@ -369,27 +398,31 @@ export function Editor({ company: init }: Props) {
                                 Footer • About • Contact • Privacy
                             </div>
                         )}
+                        {s.type === 'video' && (
+                            <div className="p-4 border-b">
+                                <h3 className="font-semibold mb-3">Company Video</h3>
+                                {(s.content?.youtubeUrl as string) && getYouTubeVideoId(s.content.youtubeUrl as string) ? (
+                                    <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                                        <iframe
+                                            className="absolute top-0 left-0 w-full h-full rounded-lg"
+                                            src={`https://www.youtube.com/embed/${getYouTubeVideoId(s.content.youtubeUrl as string)}`}
+                                            title="Company Video"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="bg-gray-200 aspect-video rounded-lg flex items-center justify-center text-gray-400">
+                                        <span>📹 Add YouTube URL in Structure panel</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 ))}
                 {c.sections.length === 0 && (
                     <div className="p-8 text-center text-gray-400">
                         Add sections to see preview
-                    </div>
-                )}
-
-                {/* YouTube Video Embed */}
-                {c.youtube_url && getYouTubeVideoId(c.youtube_url) && (
-                    <div className="p-4 border-t">
-                        <h3 className="font-semibold mb-3">Company Video</h3>
-                        <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                            <iframe
-                                className="absolute top-0 left-0 w-full h-full rounded-lg"
-                                src={`https://www.youtube.com/embed/${getYouTubeVideoId(c.youtube_url)}`}
-                                title="Company Video"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            />
-                        </div>
                     </div>
                 )}
             </div>

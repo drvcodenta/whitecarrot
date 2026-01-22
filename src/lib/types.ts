@@ -20,7 +20,7 @@ export type Company = {
 
 export type Section = {
   id: string;
-  type: 'header' | 'about' | 'life' | 'team' | 'values' | 'jobs' | 'footer';
+  type: 'header' | 'about' | 'life' | 'team' | 'values' | 'jobs' | 'footer' | 'video';
   order: number;
   content: Record<string, unknown>;
 };
