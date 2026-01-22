@@ -53,7 +53,7 @@ run the sql in `supabase/schema.sql` in your supabase sql editor. this creates t
 ```bash
 npm run seed
 ```
-
+data exists inside the `data` folder.
 this populates the database with sample companies and job listings.
 
 ### 6. run the dev server
