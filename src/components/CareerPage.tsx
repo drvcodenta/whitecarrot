@@ -61,9 +61,18 @@ export function CareerPage({ company, jobs }: Props) {
             {sections?.map(s => (
                 <div key={s.id}>
                     {s.type === 'header' && (
-                        <section className="py-12 md:py-16 text-center text-white" style={{ backgroundColor: theme.secondaryColor }}>
-                            <h1 className="text-2xl md:text-3xl font-bold mb-2">JOIN OUR TEAM</h1>
-                            <p className="opacity-80">Building the future, together.</p>
+                        <section className="relative overflow-hidden text-center text-white min-h-[300px] flex flex-col items-center justify-center p-8" style={{ backgroundColor: theme.secondaryColor }}>
+                            {company.banner_url && (
+                                <img src={company.banner_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                            )}
+                            <div className="relative z-10">
+                                <h1 className="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
+                                    {(s.content?.title as string) || 'JOIN OUR TEAM'}
+                                </h1>
+                                <p className="text-xl opacity-90 max-w-2xl mx-auto">
+                                    {(s.content?.subtitle as string) || company.seo_meta?.title || 'Building the future, together.'}
+                                </p>
+                            </div>
                         </section>
                     )}
 

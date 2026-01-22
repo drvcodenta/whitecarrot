@@ -27,24 +27,24 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Admin Section */}
+          {/* Recruiter Section */}
           <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="text-4xl mb-4">🛠️</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Recruiters & Admins</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Recruiters</h2>
             <p className="text-gray-600 mb-6">
               Manage your careers page, add job listings, and customize your brand.
             </p>
             <Link
-              href="/admin/login"
+              href="/login"
               className="inline-block border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors"
             >
-              Admin Login
+              Recruiter Login
             </Link>
           </div>
         </div>
 
         <div className="text-sm text-gray-500">
-          <p>Sample companies: <code>/berlin/edit</code>, <code>/riyadh/edit</code></p>
+          <p>Managed careers pages for recruiters.</p>
         </div>
       </div>
     </div>

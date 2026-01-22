@@ -1,6 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { CareerPage } from '@/components/CareerPage';
-import { Company } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,8 +12,15 @@ export default async function GlobalJobsPage() {
         .select('*')
         .eq('is_active', true);
 
-    // Create a generic "Global" company context for the CareerPage component
-    const globalCompany: Company = {
+    // Fetch the global company record (slug: jobs)
+    const { data: company } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('slug', 'jobs')
+        .single();
+
+    // Fallback if not yet initialized in DB
+    const globalCompany = company || {
         id: 'global',
         slug: 'jobs',
         name: 'WhiteCarrot Careers',

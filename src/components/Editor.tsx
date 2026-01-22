@@ -92,7 +92,8 @@ export function Editor({ company: init }: Props) {
             sections: updatedSections,
             theme: c.theme,
             seo_meta: c.seo_meta,
-            youtube_url: c.youtube_url
+            youtube_url: c.youtube_url,
+            banner_url: c.banner_url
         }).eq('id', c.id);
         setSaving(false);
         if (error) {
@@ -112,6 +113,7 @@ export function Editor({ company: init }: Props) {
             theme: c.theme,
             seo_meta: c.seo_meta,
             youtube_url: c.youtube_url,
+            banner_url: c.banner_url,
             status: 'published'
         }).eq('id', c.id);
         setSaving(false);
@@ -210,10 +212,22 @@ export function Editor({ company: init }: Props) {
             </div>
 
             <div className="mb-6">
-                <label className="text-sm text-gray-600 block mb-2 font-medium">SEO Meta Tags</label>
+                <label className="text-sm text-gray-600 block mb-2 font-medium">Banner URL</label>
+                <input
+                    type="url"
+                    placeholder="https://example.com/banner.jpg"
+                    value={c.banner_url || ''}
+                    onChange={e => upd({ banner_url: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Banner image URL"
+                />
+            </div>
+
+            <div className="mb-6">
+                <label className="text-sm text-gray-600 block mb-2 font-medium">SEO & Tagline</label>
                 <input
                     type="text"
-                    placeholder="Title"
+                    placeholder="Title / Tagline"
                     value={c.seo_meta?.title || ''}
                     onChange={e => updSeo('title', e.target.value)}
                     className="w-full border rounded-lg px-4 py-3 text-base mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
