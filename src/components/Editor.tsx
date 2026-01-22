@@ -3,27 +3,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Company, Section } from '@/lib/types';
 import { createClient } from '@/lib/supabase';
+import { getYouTubeVideoId } from '@/lib/utils';
 
 type Props = { company: Company };
 type Tab = 'settings' | 'structure' | 'preview';
 
 const SECTION_TYPES: Section['type'][] = ['header', 'about', 'life', 'team', 'values', 'jobs', 'footer', 'video'];
+// COLORS constant
 const COLORS = ['#1D4ED8', '#0EA5E9', '#059669', '#F59E0B', '#EF4444', '#EC4899'];
-
-// Helper function to extract YouTube video ID from various URL formats
-const getYouTubeVideoId = (url: string): string | null => {
-    if (!url) return null;
-    const patterns = [
-        /(?:youtube\.com\/watch\?v=)([^&\n?#]+)/,
-        /(?:youtu\.be\/)([^&\n?#]+)/,
-        /(?:youtube\.com\/embed\/)([^&\n?#]+)/,
-    ];
-    for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match) return match[1];
-    }
-    return null;
-};
 
 export function Editor({ company: init }: Props) {
     const [c, setC] = useState(init);
@@ -215,25 +202,6 @@ export function Editor({ company: init }: Props) {
                     rows={4}
                     aria-label="SEO description"
                 />
-            </div>
-
-            <div className="mb-6">
-                <label htmlFor="youtube-url" className="text-sm text-gray-600 block mb-2 font-medium">YouTube Video URL</label>
-                <input
-                    id="youtube-url"
-                    type="url"
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    value={c.youtube_url || ''}
-                    onChange={e => upd({ youtube_url: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    aria-label="YouTube video URL"
-                />
-                {c.youtube_url && getYouTubeVideoId(c.youtube_url) && (
-                    <p className="text-xs text-green-600 mt-1">✓ Valid YouTube URL detected</p>
-                )}
-                {c.youtube_url && !getYouTubeVideoId(c.youtube_url) && (
-                    <p className="text-xs text-red-500 mt-1">⚠ Invalid YouTube URL format</p>
-                )}
             </div>
         </div>
     );

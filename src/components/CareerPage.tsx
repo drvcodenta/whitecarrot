@@ -5,6 +5,7 @@ import { Company, Job, Section } from '@/lib/types';
 import { JobCard } from './JobCard';
 import { FilterDrawer } from './FilterDrawer';
 import { MobileDrawer } from './MobileDrawer';
+import { getYouTubeVideoId } from '@/lib/utils';
 
 type Props = { company: Company; jobs: Job[] };
 
@@ -129,6 +130,28 @@ export function CareerPage({ company, jobs }: Props) {
                                 </nav>
                             </div>
                         </footer>
+                    )}
+                    {s.type === 'video' && (
+                        <section className="max-w-4xl mx-auto px-4 py-8">
+                            {(() => {
+                                const videoId = getYouTubeVideoId(s.content?.youtubeUrl as string);
+                                if (!videoId) return null;
+                                return (
+                                    <>
+                                        <h2 className="text-lg font-bold text-gray-800 mb-4 uppercase">Company Video</h2>
+                                        <div className="relative w-full overflow-hidden rounded-xl shadow-lg border bg-black" style={{ paddingBottom: '56.25%' }}>
+                                            <iframe
+                                                className="absolute top-0 left-0 w-full h-full"
+                                                src={`https://www.youtube.com/embed/${videoId}`}
+                                                title="Company Video"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            />
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </section>
                     )}
                 </div>
             ))}
