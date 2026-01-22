@@ -249,7 +249,7 @@ export function Editor({ company: init }: Props) {
                         </div>
                         {/* YouTube URL input for video sections */}
                         {s.type === 'video' && (
-                            <div className="bg-white rounded-xl border shadow-sm p-3 mt-2 ml-6">
+                            <div className="bg-white rounded-xl border shadow-sm p-3 mt-2">
                                 <label className="text-xs text-gray-500 block mb-1">YouTube URL</label>
                                 <input
                                     type="url"
