@@ -67,7 +67,11 @@ export function MobileDrawer({ companyName, logoUrl, primaryColor, secondaryColo
 
                     <div className="mt-4">
                         <p className="text-xs text-gray-400 uppercase mb-2">Quick links</p>
-                        <button className="w-full py-3 rounded-full text-white font-medium min-h-[44px]" style={{ backgroundColor: primaryColor }}>
+                        <button
+                            onClick={() => window.location.href = '/jobs'}
+                            className="w-full py-3 rounded-full text-white font-medium min-h-[44px]"
+                            style={{ backgroundColor: primaryColor }}
+                        >
                             Search Jobs
                         </button>
                     </div>
