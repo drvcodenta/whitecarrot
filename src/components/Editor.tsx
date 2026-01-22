@@ -75,9 +75,25 @@ export function Editor({ company: init }: Props) {
         });
     };
 
+    useEffect(() => {
+        const lifeSection = c.sections.find(s => s.type === 'life');
+        if (lifeSection?.content?.images) {
+            const imgs = lifeSection.content.images as (string | null)[];
+            setLifeImages(imgs.length < 3 ? [...imgs, ...Array(3 - imgs.length).fill(null)] : imgs.slice(0, 3));
+        }
+    }, []);
+
     const save = async () => {
         setSaving(true);
-        const { error } = await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta, youtube_url: c.youtube_url }).eq('id', c.id);
+        const updatedSections = c.sections.map(s =>
+            s.type === 'life' ? { ...s, content: { ...s.content, images: lifeImages } } : s
+        );
+        const { error } = await sb.from('companies').update({
+            sections: updatedSections,
+            theme: c.theme,
+            seo_meta: c.seo_meta,
+            youtube_url: c.youtube_url
+        }).eq('id', c.id);
         setSaving(false);
         if (error) {
             alert('Save failed: ' + error.message);
@@ -88,7 +104,16 @@ export function Editor({ company: init }: Props) {
 
     const publish = async () => {
         setSaving(true);
-        const { error } = await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta, youtube_url: c.youtube_url, status: 'published' }).eq('id', c.id);
+        const updatedSections = c.sections.map(s =>
+            s.type === 'life' ? { ...s, content: { ...s.content, images: lifeImages } } : s
+        );
+        const { error } = await sb.from('companies').update({
+            sections: updatedSections,
+            theme: c.theme,
+            seo_meta: c.seo_meta,
+            youtube_url: c.youtube_url,
+            status: 'published'
+        }).eq('id', c.id);
         setSaving(false);
         if (error) {
             alert('Publish failed: ' + error.message);
@@ -275,6 +300,44 @@ export function Editor({ company: init }: Props) {
                                 )}
                             </div>
                         )}
+                        {/* Life at Company image upload for life sections */}
+                        {s.type === 'life' && (
+                            <div className="bg-white rounded-xl border shadow-sm p-4 mt-2">
+                                <label className="text-xs text-gray-500 block mb-3 font-medium uppercase tracking-wider">Section Images (Max 3)</label>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {[0, 1, 2].map(index => (
+                                        <div key={index} className="relative aspect-square">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                ref={el => { lifeImageRefs.current[index] = el; }}
+                                                onChange={e => handleLifeImageChange(index, e)}
+                                            />
+                                            {lifeImages[index] ? (
+                                                <div className="group relative w-full h-full">
+                                                    <img src={lifeImages[index]!} alt={`Life ${index}`} className="w-full h-full object-cover rounded-lg border shadow-sm" />
+                                                    <button
+                                                        onClick={() => removeLifeImage(index)}
+                                                        className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => lifeImageRefs.current[index]?.click()}
+                                                    className="w-full h-full border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-all bg-gray-50 group"
+                                                >
+                                                    <span className="text-xl group-hover:scale-125 transition-transform">+</span>
+                                                    <span className="text-[10px] uppercase font-bold tracking-tight">Upload</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
@@ -324,9 +387,17 @@ export function Editor({ company: init }: Props) {
                         )}
                         {s.type === 'life' && (
                             <div className="p-4 border-b">
-                                <h3 className="font-semibold mb-2">Life at Company</h3>
-                                <div className="grid grid-cols-2 gap-1">
-                                    {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-200 aspect-square rounded text-center text-gray-400 text-xs flex items-center justify-center">📷</div>)}
+                                <h3 className="font-semibold mb-3">Life at Company</h3>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[0, 1, 2].map(i => (
+                                        <div key={i} className="bg-gray-100 aspect-square rounded-lg border overflow-hidden flex items-center justify-center text-gray-400">
+                                            {lifeImages[i] ? (
+                                                <img src={lifeImages[i]!} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-lg">📷</span>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}

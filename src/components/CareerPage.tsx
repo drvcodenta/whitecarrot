@@ -65,11 +65,17 @@ export function CareerPage({ company, jobs }: Props) {
 
                     {s.type === 'life' && (
                         <section className="max-w-4xl mx-auto px-4 py-8">
-                            <h2 className="text-lg font-bold text-gray-800 mb-4">LIFE AT {company.name.toUpperCase()}</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                {[1, 2, 3, 4, 5, 6].map(i => (
-                                    <div key={i} className="bg-gray-200 rounded-lg aspect-square flex items-center justify-center text-gray-400">
-                                        📷
+                            <h2 className="text-lg font-bold text-gray-800 mb-4 uppercase">Life at {company.name}</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                {(s.content?.images as string[] || [null, null, null]).slice(0, 3).map((img, i) => (
+                                    <div key={i} className="bg-gray-100 rounded-xl aspect-square overflow-hidden shadow-sm border border-gray-200 flex items-center justify-center text-gray-400">
+                                        {img ? (
+                                            <img src={img} alt={`Life at ${company.name} ${i + 1}`} className="w-full h-full object-cover transition-transform hover:scale-105 duration-300" />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-1 opacity-50">
+                                                <span className="text-2xl">📷</span>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
