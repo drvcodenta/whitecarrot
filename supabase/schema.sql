@@ -6,6 +6,7 @@ CREATE TABLE companies (
   status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
   theme JSONB DEFAULT '{"primaryColor":"#1D4ED8","secondaryColor":"#1E3A5F","accentColor":"#0EA5E9"}',
   sections JSONB DEFAULT '[]',
+  youtube_url TEXT,
   owner_id UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -10,12 +10,29 @@ type Tab = 'settings' | 'structure' | 'preview';
 const SECTION_TYPES: Section['type'][] = ['header', 'about', 'life', 'team', 'values', 'jobs', 'footer'];
 const COLORS = ['#1D4ED8', '#0EA5E9', '#059669', '#F59E0B', '#EF4444', '#EC4899'];
 
+// Helper function to extract YouTube video ID from various URL formats
+const getYouTubeVideoId = (url: string): string | null => {
+    if (!url) return null;
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=)([^&\n?#]+)/,
+        /(?:youtu\.be\/)([^&\n?#]+)/,
+        /(?:youtube\.com\/embed\/)([^&\n?#]+)/,
+    ];
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+    }
+    return null;
+};
+
 export function Editor({ company: init }: Props) {
     const [c, setC] = useState(init);
     const [saving, setSaving] = useState(false);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [lifeImages, setLifeImages] = useState<(string | null)[]>([null, null, null]);
     const [activeTab, setActiveTab] = useState<Tab>('structure');
     const logoRef = useRef<HTMLInputElement>(null);
+    const lifeImageRefs = useRef<(HTMLInputElement | null)[]>([null, null, null]);
     const sb = createClient();
 
     const upd = (p: Partial<Company>) => setC(prev => ({ ...prev, ...p }));
@@ -47,9 +64,33 @@ export function Editor({ company: init }: Props) {
         }
     };
 
+    const handleLifeImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64 = reader.result as string;
+                setLifeImages(prev => {
+                    const newImages = [...prev];
+                    newImages[index] = base64;
+                    return newImages;
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeLifeImage = (index: number) => {
+        setLifeImages(prev => {
+            const newImages = [...prev];
+            newImages[index] = null;
+            return newImages;
+        });
+    };
+
     const save = async () => {
         setSaving(true);
-        const { error } = await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta }).eq('id', c.id);
+        const { error } = await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta, youtube_url: c.youtube_url }).eq('id', c.id);
         setSaving(false);
         if (error) {
             alert('Save failed: ' + error.message);
@@ -60,7 +101,7 @@ export function Editor({ company: init }: Props) {
 
     const publish = async () => {
         setSaving(true);
-        const { error } = await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta, status: 'published' }).eq('id', c.id);
+        const { error } = await sb.from('companies').update({ sections: c.sections, theme: c.theme, seo_meta: c.seo_meta, youtube_url: c.youtube_url, status: 'published' }).eq('id', c.id);
         setSaving(false);
         if (error) {
             alert('Publish failed: ' + error.message);
@@ -89,8 +130,8 @@ export function Editor({ company: init }: Props) {
         { id: 'preview', label: 'Preview', icon: '👁️' },
     ];
 
-    // Settings Panel Content
-    const SettingsPanel = () => (
+    // Settings Panel Content - defined as inline JSX to prevent re-render issues
+    const settingsPanelContent = (
         <div className="p-4 pb-24 md:pb-4">
             <h2 className="font-semibold mb-4 text-lg">Company Settings</h2>
 
@@ -175,11 +216,30 @@ export function Editor({ company: init }: Props) {
                     aria-label="SEO description"
                 />
             </div>
+
+            <div className="mb-6">
+                <label htmlFor="youtube-url" className="text-sm text-gray-600 block mb-2 font-medium">YouTube Video URL</label>
+                <input
+                    id="youtube-url"
+                    type="url"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    value={c.youtube_url || ''}
+                    onChange={e => upd({ youtube_url: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="YouTube video URL"
+                />
+                {c.youtube_url && getYouTubeVideoId(c.youtube_url) && (
+                    <p className="text-xs text-green-600 mt-1">✓ Valid YouTube URL detected</p>
+                )}
+                {c.youtube_url && !getYouTubeVideoId(c.youtube_url) && (
+                    <p className="text-xs text-red-500 mt-1">⚠ Invalid YouTube URL format</p>
+                )}
+            </div>
         </div>
     );
 
-    // Structure Panel Content
-    const StructurePanel = () => (
+    // Structure Panel Content - defined as inline JSX to prevent re-render issues
+    const structurePanelContent = (
         <div className="p-4 pb-24 md:pb-4">
             <h2 className="font-semibold mb-4 text-lg">Page Structure</h2>
             <div className="space-y-3 mb-6" role="list" aria-label="Page sections">
@@ -237,8 +297,8 @@ export function Editor({ company: init }: Props) {
         </div>
     );
 
-    // Preview Panel Content
-    const PreviewPanel = () => (
+    // Preview Panel Content - defined as inline JSX to prevent re-render issues
+    const previewPanelContent = (
         <div className="p-4 pb-24 md:pb-4">
             <h2 className="font-semibold mb-4 text-lg">Live Preview</h2>
             <div className="bg-white rounded-xl shadow-lg overflow-hidden border">
@@ -316,6 +376,22 @@ export function Editor({ company: init }: Props) {
                         Add sections to see preview
                     </div>
                 )}
+
+                {/* YouTube Video Embed */}
+                {c.youtube_url && getYouTubeVideoId(c.youtube_url) && (
+                    <div className="p-4 border-t">
+                        <h3 className="font-semibold mb-3">Company Video</h3>
+                        <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                            <iframe
+                                className="absolute top-0 left-0 w-full h-full rounded-lg"
+                                src={`https://www.youtube.com/embed/${getYouTubeVideoId(c.youtube_url)}`}
+                                title="Company Video"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -349,21 +425,21 @@ export function Editor({ company: init }: Props) {
             {/* Desktop: Three-column layout */}
             <div className="hidden md:flex flex-1 overflow-hidden">
                 <aside className="w-72 bg-white border-r overflow-y-auto shrink-0">
-                    <SettingsPanel />
+                    {settingsPanelContent}
                 </aside>
                 <main className="w-80 overflow-y-auto border-r bg-gray-50 shrink-0">
-                    <StructurePanel />
+                    {structurePanelContent}
                 </main>
                 <div className="flex-1 overflow-y-auto bg-gray-50">
-                    <PreviewPanel />
+                    {previewPanelContent}
                 </div>
             </div>
 
             {/* Mobile: Single panel with tab navigation */}
             <div className="md:hidden flex-1 overflow-y-auto bg-gray-50">
-                {activeTab === 'settings' && <SettingsPanel />}
-                {activeTab === 'structure' && <StructurePanel />}
-                {activeTab === 'preview' && <PreviewPanel />}
+                {activeTab === 'settings' && settingsPanelContent}
+                {activeTab === 'structure' && structurePanelContent}
+                {activeTab === 'preview' && previewPanelContent}
             </div>
 
             {/* Mobile: Bottom Tab Bar */}
@@ -382,8 +458,8 @@ export function Editor({ company: init }: Props) {
                             onClick={() => setActiveTab(tab.id)}
                             onKeyDown={(e) => handleTabKeyDown(e, tabs.map(t => t.id))}
                             className={`flex-1 py-4 flex flex-col items-center gap-1 text-sm transition-colors focus:outline-none focus:bg-gray-100 ${activeTab === tab.id
-                                    ? 'text-blue-600 bg-blue-50 font-medium'
-                                    : 'text-gray-600 hover:bg-gray-50'
+                                ? 'text-blue-600 bg-blue-50 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
                             <span className="text-xl" aria-hidden="true">{tab.icon}</span>

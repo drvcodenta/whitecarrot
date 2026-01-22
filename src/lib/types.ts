@@ -5,6 +5,7 @@ export type Company = {
   status: 'draft' | 'published';
   logo_url?: string;
   banner_url?: string;
+  youtube_url?: string;
   seo_meta?: { title?: string; description?: string; keywords?: string };
   theme: {
     primaryColor: string;
