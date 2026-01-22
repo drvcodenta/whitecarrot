@@ -13,7 +13,6 @@ export default function Home() {
             <ul className="text-left text-sm text-gray-600 space-y-2">
               <li><code>/[slug]/careers</code> - Public careers page</li>
               <li><code>/[slug]/edit</code> - Editor (auth required)</li>
-              <li><code>/[slug]/preview</code> - Preview draft</li>
             </ul>
           </div>
 

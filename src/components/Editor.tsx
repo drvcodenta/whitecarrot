@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Company, Section } from '@/lib/types';
 import { createClient } from '@/lib/supabase';
 
 type Props = { company: Company };
+type Tab = 'settings' | 'structure' | 'preview';
 
 const SECTION_TYPES: Section['type'][] = ['header', 'about', 'life', 'team', 'values', 'jobs', 'footer'];
 const COLORS = ['#1D4ED8', '#0EA5E9', '#059669', '#F59E0B', '#EF4444', '#EC4899'];
@@ -13,6 +14,7 @@ export function Editor({ company: init }: Props) {
     const [c, setC] = useState(init);
     const [saving, setSaving] = useState(false);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<Tab>('structure');
     const logoRef = useRef<HTMLInputElement>(null);
     const sb = createClient();
 
@@ -51,7 +53,6 @@ export function Editor({ company: init }: Props) {
         setSaving(false);
         if (error) {
             alert('Save failed: ' + error.message);
-            console.error('Save error:', error);
         } else {
             alert('Saved!');
         }
@@ -63,192 +64,334 @@ export function Editor({ company: init }: Props) {
         setSaving(false);
         if (error) {
             alert('Publish failed: ' + error.message);
-            console.error('Publish error:', error);
         } else {
             window.location.href = `/${c.slug}/careers`;
         }
     };
 
-    return (
-        <div className="min-h-screen bg-gray-100 flex flex-col">
-            {/* Header */}
-            <header className="bg-white border-b px-4 py-2 flex items-center justify-between sticky top-0 z-20">
-                <div className="flex items-center gap-4">
-                    <span className="text-lg font-semibold">Careers page builder</span>
-                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">{c.name}</span>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={save} disabled={saving} className="px-3 py-1.5 border rounded text-sm">{saving ? 'Saving...' : 'Save Draft'}</button>
-                    <button onClick={publish} disabled={saving} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Publish</button>
-                </div>
-            </header>
+    // Keyboard navigation for tabs
+    const handleTabKeyDown = useCallback((e: React.KeyboardEvent, tabs: Tab[]) => {
+        const currentIndex = tabs.indexOf(activeTab);
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const newIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+            setActiveTab(tabs[newIndex]);
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            const newIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+            setActiveTab(tabs[newIndex]);
+        }
+    }, [activeTab]);
 
-            <div className="flex flex-1 overflow-hidden">
-                {/* Left Sidebar - Brand Settings */}
-                <aside className="w-64 bg-white border-r p-4 overflow-y-auto shrink-0">
-                    <h2 className="font-semibold mb-4">Company Settings</h2>
+    const tabs: { id: Tab; label: string; icon: string }[] = [
+        { id: 'settings', label: 'Settings', icon: '⚙️' },
+        { id: 'structure', label: 'Structure', icon: '📋' },
+        { id: 'preview', label: 'Preview', icon: '👁️' },
+    ];
 
-                    <div className="mb-4">
-                        <label className="text-xs text-gray-500 block mb-1">Primary Color</label>
-                        <div className="flex gap-1 mb-2">
-                            {COLORS.map(clr => (
-                                <button key={clr} onClick={() => updTheme('primaryColor', clr)}
-                                    className={`w-6 h-6 rounded ${c.theme.primaryColor === clr ? 'ring-2 ring-offset-1 ring-black' : ''}`}
-                                    style={{ backgroundColor: clr }} aria-label={`Set primary color to ${clr}`} />
-                            ))}
+    // Settings Panel Content
+    const SettingsPanel = () => (
+        <div className="p-4 pb-24 md:pb-4">
+            <h2 className="font-semibold mb-4 text-lg">Company Settings</h2>
+
+            <div className="mb-6">
+                <label className="text-sm text-gray-600 block mb-2 font-medium">Primary Color</label>
+                <div className="flex gap-2 flex-wrap" role="radiogroup" aria-label="Primary color selection">
+                    {COLORS.map(clr => (
+                        <button
+                            key={clr}
+                            onClick={() => updTheme('primaryColor', clr)}
+                            className={`w-12 h-12 rounded-lg transition-transform active:scale-95 ${c.theme.primaryColor === clr ? 'ring-2 ring-offset-2 ring-gray-800' : ''}`}
+                            style={{ backgroundColor: clr }}
+                            aria-label={`Set primary color to ${clr}`}
+                            aria-pressed={c.theme.primaryColor === clr}
+                            role="radio"
+                            aria-checked={c.theme.primaryColor === clr}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            <div className="mb-6">
+                <label className="text-sm text-gray-600 block mb-2 font-medium">Secondary Color</label>
+                <div className="flex gap-2 flex-wrap" role="radiogroup" aria-label="Secondary color selection">
+                    {COLORS.map(clr => (
+                        <button
+                            key={clr}
+                            onClick={() => updTheme('secondaryColor', clr)}
+                            className={`w-12 h-12 rounded-lg transition-transform active:scale-95 ${c.theme.secondaryColor === clr ? 'ring-2 ring-offset-2 ring-gray-800' : ''}`}
+                            style={{ backgroundColor: clr }}
+                            aria-label={`Set secondary color to ${clr}`}
+                            aria-pressed={c.theme.secondaryColor === clr}
+                            role="radio"
+                            aria-checked={c.theme.secondaryColor === clr}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            <div className="mb-6">
+                <label className="text-sm text-gray-600 block mb-2 font-medium">Upload Logo</label>
+                <input type="file" ref={logoRef} accept="image/*" onChange={handleLogoChange} className="hidden" id="logo-upload" />
+                <button
+                    onClick={() => logoRef.current?.click()}
+                    className="w-full min-h-[80px] border-2 border-dashed rounded-xl p-4 text-center text-gray-400 text-base hover:bg-gray-50 active:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Upload company logo"
+                >
+                    {logoPreview ? <img src={logoPreview} alt="Company logo preview" className="h-16 mx-auto" /> : '📤 Upload logo'}
+                </button>
+            </div>
+
+            <div className="mb-6">
+                <label htmlFor="typography-select" className="text-sm text-gray-600 block mb-2 font-medium">Typography</label>
+                <select
+                    id="typography-select"
+                    value={c.theme.fontFamily || 'Inter'}
+                    onChange={e => updTheme('fontFamily', e.target.value)}
+                    className="w-full border rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option>Inter</option>
+                    <option>Roboto</option>
+                    <option>Open Sans</option>
+                </select>
+            </div>
+
+            <div className="mb-6">
+                <label className="text-sm text-gray-600 block mb-2 font-medium">SEO Meta Tags</label>
+                <input
+                    type="text"
+                    placeholder="Title"
+                    value={c.seo_meta?.title || ''}
+                    onChange={e => updSeo('title', e.target.value)}
+                    className="w-full border rounded-lg px-4 py-3 text-base mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="SEO title"
+                />
+                <textarea
+                    placeholder="Description"
+                    value={c.seo_meta?.description || ''}
+                    onChange={e => updSeo('description', e.target.value)}
+                    className="w-full border rounded-lg px-4 py-3 text-base resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                    aria-label="SEO description"
+                />
+            </div>
+        </div>
+    );
+
+    // Structure Panel Content
+    const StructurePanel = () => (
+        <div className="p-4 pb-24 md:pb-4">
+            <h2 className="font-semibold mb-4 text-lg">Page Structure</h2>
+            <div className="space-y-3 mb-6" role="list" aria-label="Page sections">
+                {c.sections.map((s, i) => (
+                    <div
+                        key={s.id}
+                        className="bg-white rounded-xl border shadow-sm p-3 flex justify-between items-center"
+                        role="listitem"
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className="text-gray-400 text-lg" aria-hidden="true">☰</span>
+                            <span className="font-medium capitalize text-base">{s.type}</span>
+                        </div>
+                        <div className="flex gap-1">
+                            <button
+                                onClick={() => moveSection(s.id, 'up')}
+                                disabled={i === 0}
+                                className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                aria-label={`Move ${s.type} section up`}
+                            >
+                                ↑
+                            </button>
+                            <button
+                                onClick={() => moveSection(s.id, 'down')}
+                                disabled={i === c.sections.length - 1}
+                                className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                aria-label={`Move ${s.type} section down`}
+                            >
+                                ↓
+                            </button>
+                            <button
+                                onClick={() => rmSection(s.id)}
+                                className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                                aria-label={`Remove ${s.type} section`}
+                            >
+                                ×
+                            </button>
                         </div>
                     </div>
+                ))}
+            </div>
 
-                    <div className="mb-4">
-                        <label className="text-xs text-gray-500 block mb-1">Secondary Color</label>
-                        <div className="flex gap-1 mb-2">
-                            {COLORS.map(clr => (
-                                <button key={clr} onClick={() => updTheme('secondaryColor', clr)}
-                                    className={`w-6 h-6 rounded ${c.theme.secondaryColor === clr ? 'ring-2 ring-offset-1 ring-black' : ''}`}
-                                    style={{ backgroundColor: clr }} aria-label={`Set secondary color to ${clr}`} />
-                            ))}
-                        </div>
-                    </div>
+            <p className="text-sm text-gray-500 mb-3">Add section:</p>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Add new section">
+                {SECTION_TYPES.filter(t => !c.sections.find(s => s.type === t)).map(t => (
+                    <button
+                        key={t}
+                        onClick={() => addSection(t)}
+                        className="px-4 py-2 border rounded-full text-sm capitalize hover:bg-white active:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
+                    >
+                        + {t}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
 
-                    <div className="mb-4">
-                        <label className="text-xs text-gray-500 block mb-1">Upload logo</label>
-                        <input type="file" ref={logoRef} accept="image/*" onChange={handleLogoChange} className="hidden" />
-                        <button onClick={() => logoRef.current?.click()}
-                            className="w-full border-2 border-dashed rounded p-4 text-center text-gray-400 text-sm hover:bg-gray-50">
-                            {logoPreview ? <img src={logoPreview} alt="Logo" className="h-12 mx-auto" /> : '📤 Upload logo'}
-                        </button>
-                    </div>
-
-                    <div className="mb-4">
-                        <label className="text-xs text-gray-500 block mb-1">Typography</label>
-                        <select value={c.theme.fontFamily || 'Inter'} onChange={e => updTheme('fontFamily', e.target.value)}
-                            className="w-full border rounded px-2 py-1 text-sm">
-                            <option>Inter</option>
-                            <option>Roboto</option>
-                            <option>Open Sans</option>
-                        </select>
-                    </div>
-
-                    <div className="mb-4">
-                        <label className="text-xs text-gray-500 block mb-1">SEO meta tags</label>
-                        <input type="text" placeholder="Title" value={c.seo_meta?.title || ''} onChange={e => updSeo('title', e.target.value)}
-                            className="w-full border rounded px-2 py-1 text-sm mb-2" />
-                        <textarea placeholder="Description" value={c.seo_meta?.description || ''} onChange={e => updSeo('description', e.target.value)}
-                            className="w-full border rounded px-2 py-1 text-sm resize-none" rows={3} />
-                    </div>
-                </aside>
-
-                {/* Center - Page Structure */}
-                <main className="w-80 p-4 overflow-y-auto border-r bg-gray-50 shrink-0">
-                    <h2 className="font-semibold mb-4">Page Structure</h2>
-                    <div className="space-y-2 mb-4">
-                        {c.sections.map((s, i) => (
-                            <div key={s.id} className="bg-white rounded-lg border p-2 flex justify-between items-center text-sm">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-gray-400">☰</span>
-                                    <span className="font-medium capitalize">{s.type}</span>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button onClick={() => moveSection(s.id, 'up')} disabled={i === 0}
-                                        className="px-1 text-gray-400 hover:text-gray-600 disabled:opacity-30" aria-label="Move up">↑</button>
-                                    <button onClick={() => moveSection(s.id, 'down')} disabled={i === c.sections.length - 1}
-                                        className="px-1 text-gray-400 hover:text-gray-600 disabled:opacity-30" aria-label="Move down">↓</button>
-                                    <button onClick={() => rmSection(s.id)} className="px-1 text-red-400 hover:text-red-600" aria-label="Remove">×</button>
+    // Preview Panel Content
+    const PreviewPanel = () => (
+        <div className="p-4 pb-24 md:pb-4">
+            <h2 className="font-semibold mb-4 text-lg">Live Preview</h2>
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden border">
+                {c.sections.map(s => (
+                    <div key={s.id}>
+                        {s.type === 'header' && (
+                            <div className="p-4 text-white flex items-center gap-3" style={{ backgroundColor: c.theme.secondaryColor }}>
+                                {logoPreview ? (
+                                    <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded" />
+                                ) : (
+                                    <div className="w-10 h-10 rounded flex items-center justify-center text-white font-bold" style={{ backgroundColor: c.theme.primaryColor }}>
+                                        {c.name[0]}
+                                    </div>
+                                )}
+                                <div>
+                                    <div className="font-semibold">{c.name}</div>
+                                    <div className="text-xs opacity-80">Tagline goes here</div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-
-                    <p className="text-xs text-gray-500 mb-2">Add section:</p>
-                    <div className="flex flex-wrap gap-1">
-                        {SECTION_TYPES.filter(t => !c.sections.find(s => s.type === t)).map(t => (
-                            <button key={t} onClick={() => addSection(t)}
-                                className="px-2 py-1 border rounded-full text-xs capitalize hover:bg-white">+ {t}</button>
-                        ))}
-                    </div>
-                </main>
-
-                {/* Right - Live Preview */}
-                <div className="flex-1 p-4 overflow-y-auto">
-                    <h2 className="font-semibold mb-4">Live Preview</h2>
-                    <div className="bg-white rounded-lg shadow-lg overflow-hidden max-w-md mx-auto border">
-                        {c.sections.map(s => (
-                            <div key={s.id}>
-                                {s.type === 'header' && (
-                                    <div className="p-4 text-white flex items-center gap-3" style={{ backgroundColor: c.theme.secondaryColor }}>
-                                        {logoPreview ? (
-                                            <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded" />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded flex items-center justify-center text-white font-bold" style={{ backgroundColor: c.theme.primaryColor }}>
-                                                {c.name[0]}
-                                            </div>
-                                        )}
-                                        <div>
-                                            <div className="font-semibold">{c.name}</div>
-                                            <div className="text-xs opacity-80">Tagline goes here</div>
-                                        </div>
-                                    </div>
-                                )}
-                                {s.type === 'about' && (
-                                    <div className="p-4 border-b">
-                                        <h3 className="font-semibold mb-2">About Us</h3>
-                                        <p className="text-sm text-gray-600">Company description text would go here...</p>
-                                    </div>
-                                )}
-                                {s.type === 'life' && (
-                                    <div className="p-4 border-b">
-                                        <h3 className="font-semibold mb-2">Life at Company</h3>
-                                        <div className="grid grid-cols-2 gap-1">
-                                            {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-200 aspect-square rounded text-center text-gray-400 text-xs flex items-center justify-center">📷</div>)}
-                                        </div>
-                                    </div>
-                                )}
-                                {s.type === 'team' && (
-                                    <div className="p-4 border-b">
-                                        <h3 className="font-semibold mb-2">Team</h3>
-                                        <div className="flex gap-2">
-                                            {[1, 2, 3].map(i => <div key={i} className="w-12 h-12 rounded-full bg-gray-200 text-center text-gray-400 text-xs flex items-center justify-center">👤</div>)}
-                                        </div>
-                                    </div>
-                                )}
-                                {s.type === 'values' && (
-                                    <div className="p-4 border-b">
-                                        <h3 className="font-semibold mb-2">Values</h3>
-                                        <div className="flex gap-2 text-xs">
-                                            {['Innovation', 'Integrity', 'Growth'].map(v => (
-                                                <span key={v} className="px-2 py-1 rounded" style={{ backgroundColor: c.theme.primaryColor + '20', color: c.theme.primaryColor }}>{v}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {s.type === 'jobs' && (
-                                    <div className="p-4 border-b">
-                                        <h3 className="font-semibold mb-2">Open Roles</h3>
-                                        <div className="space-y-2">
-                                            {['Software Engineer', 'Product Manager'].map(j => (
-                                                <div key={j} className="border rounded p-2 flex justify-between items-center text-sm">
-                                                    <span>{j}</span>
-                                                    <button className="px-2 py-1 rounded text-white text-xs" style={{ backgroundColor: c.theme.primaryColor }}>Apply</button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {s.type === 'footer' && (
-                                    <div className="p-4 bg-gray-100 text-center text-xs text-gray-500">
-                                        Footer • About • Contact • Privacy
-                                    </div>
-                                )}
+                        )}
+                        {s.type === 'about' && (
+                            <div className="p-4 border-b">
+                                <h3 className="font-semibold mb-2">About Us</h3>
+                                <p className="text-sm text-gray-600">Company description text would go here...</p>
                             </div>
-                        ))}
-                        {c.sections.length === 0 && (
-                            <div className="p-8 text-center text-gray-400">
-                                Add sections to see preview
+                        )}
+                        {s.type === 'life' && (
+                            <div className="p-4 border-b">
+                                <h3 className="font-semibold mb-2">Life at Company</h3>
+                                <div className="grid grid-cols-2 gap-1">
+                                    {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-200 aspect-square rounded text-center text-gray-400 text-xs flex items-center justify-center">📷</div>)}
+                                </div>
+                            </div>
+                        )}
+                        {s.type === 'team' && (
+                            <div className="p-4 border-b">
+                                <h3 className="font-semibold mb-2">Team</h3>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3].map(i => <div key={i} className="w-12 h-12 rounded-full bg-gray-200 text-center text-gray-400 text-xs flex items-center justify-center">👤</div>)}
+                                </div>
+                            </div>
+                        )}
+                        {s.type === 'values' && (
+                            <div className="p-4 border-b">
+                                <h3 className="font-semibold mb-2">Values</h3>
+                                <div className="flex gap-2 text-xs flex-wrap">
+                                    {['Innovation', 'Integrity', 'Growth'].map(v => (
+                                        <span key={v} className="px-2 py-1 rounded" style={{ backgroundColor: c.theme.primaryColor + '20', color: c.theme.primaryColor }}>{v}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {s.type === 'jobs' && (
+                            <div className="p-4 border-b">
+                                <h3 className="font-semibold mb-2">Open Roles</h3>
+                                <div className="space-y-2">
+                                    {['Software Engineer', 'Product Manager'].map(j => (
+                                        <div key={j} className="border rounded p-2 flex justify-between items-center text-sm">
+                                            <span>{j}</span>
+                                            <button className="px-2 py-1 rounded text-white text-xs" style={{ backgroundColor: c.theme.primaryColor }}>Apply</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {s.type === 'footer' && (
+                            <div className="p-4 bg-gray-100 text-center text-xs text-gray-500">
+                                Footer • About • Contact • Privacy
                             </div>
                         )}
                     </div>
+                ))}
+                {c.sections.length === 0 && (
+                    <div className="p-8 text-center text-gray-400">
+                        Add sections to see preview
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="min-h-screen bg-gray-100 flex flex-col">
+            {/* Header */}
+            <header className="bg-white border-b px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+                <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                    <span className="text-base md:text-lg font-semibold truncate">Careers page builder</span>
+                    <span className="text-xs md:text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded truncate max-w-[80px] md:max-w-none">{c.name}</span>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={save}
+                        disabled={saving}
+                        className="px-3 py-2 border rounded-lg text-sm min-h-[44px] hover:bg-gray-50 active:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    >
+                        {saving ? 'Saving...' : 'Save Draft'}
+                    </button>
+                    <button
+                        onClick={publish}
+                        disabled={saving}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm min-h-[44px] hover:bg-blue-700 active:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                    >
+                        Publish
+                    </button>
+                </div>
+            </header>
+
+            {/* Desktop: Three-column layout */}
+            <div className="hidden md:flex flex-1 overflow-hidden">
+                <aside className="w-72 bg-white border-r overflow-y-auto shrink-0">
+                    <SettingsPanel />
+                </aside>
+                <main className="w-80 overflow-y-auto border-r bg-gray-50 shrink-0">
+                    <StructurePanel />
+                </main>
+                <div className="flex-1 overflow-y-auto bg-gray-50">
+                    <PreviewPanel />
                 </div>
             </div>
+
+            {/* Mobile: Single panel with tab navigation */}
+            <div className="md:hidden flex-1 overflow-y-auto bg-gray-50">
+                {activeTab === 'settings' && <SettingsPanel />}
+                {activeTab === 'structure' && <StructurePanel />}
+                {activeTab === 'preview' && <PreviewPanel />}
+            </div>
+
+            {/* Mobile: Bottom Tab Bar */}
+            <nav
+                className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg"
+                role="tablist"
+                aria-label="Editor sections"
+            >
+                <div className="flex">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            role="tab"
+                            aria-selected={activeTab === tab.id}
+                            aria-controls={`${tab.id}-panel`}
+                            onClick={() => setActiveTab(tab.id)}
+                            onKeyDown={(e) => handleTabKeyDown(e, tabs.map(t => t.id))}
+                            className={`flex-1 py-4 flex flex-col items-center gap-1 text-sm transition-colors focus:outline-none focus:bg-gray-100 ${activeTab === tab.id
+                                    ? 'text-blue-600 bg-blue-50 font-medium'
+                                    : 'text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <span className="text-xl" aria-hidden="true">{tab.icon}</span>
+                            <span>{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </nav>
         </div>
     );
 }
