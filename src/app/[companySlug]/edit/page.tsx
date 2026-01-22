@@ -13,7 +13,7 @@ export default async function EditPage({
     // Check auth
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        redirect('/admin/login');
+        redirect('/login');
     }
 
     // Fetch company (RLS will check ownership)

@@ -25,6 +25,14 @@ export function CareerPage({ company, jobs }: Props) {
         experienceLevel: string;
         search: string
     }) => {
+        // Redirection logic for global jobs page
+        if (company.slug === 'jobs' && f.location) {
+            // Map location to slug (simple slugify for now)
+            const targetSlug = f.location.split(',')[0].toLowerCase().trim();
+            window.location.href = `/${targetSlug}/careers`;
+            return;
+        }
+
         let r = jobs;
         if (f.location) r = r.filter(j => j.location === f.location);
         if (f.jobType) r = r.filter(j => j.job_type === f.jobType);
