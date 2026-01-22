@@ -30,8 +30,14 @@ export type Job = {
   company_id: string;
   title: string;
   location: string;
-  job_type: 'full-time' | 'part-time' | 'contract' | 'remote' | 'hybrid';
+  job_type: string;
+  work_policy?: string;
+  employment_type?: string;
   department: string;
+  experience_level?: string;
+  salary_range?: string;
+  job_slug?: string;
+  posted_days_ago?: string;
   is_active: boolean;
   created_at: string;
 };

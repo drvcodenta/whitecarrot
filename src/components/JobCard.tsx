@@ -1,11 +1,12 @@
 import { Job } from '@/lib/types';
 
 const BADGES: Record<string, string> = {
-    'full-time': 'bg-green-500',
-    'part-time': 'bg-orange-500',
-    'remote': 'bg-blue-500',
-    'contract': 'bg-purple-500',
-    'hybrid': 'bg-teal-500',
+    'Permanent': 'bg-green-500',
+    'Temporary': 'bg-orange-500',
+    'Internship': 'bg-blue-500',
+    'Remote': 'bg-blue-600',
+    'Full time': 'bg-indigo-500',
+    'Part time': 'bg-yellow-500',
 };
 
 export function JobCard({ job, primaryColor }: { job: Job; primaryColor?: string }) {

@@ -5,16 +5,30 @@ import { useState, useEffect, useRef } from 'react';
 type Props = {
     locations: string[];
     departments: string[];
-    onFilter: (f: { location: string; jobType: string; department: string; search: string }) => void;
+    onFilter: (f: {
+        location: string;
+        jobType: string;
+        department: string;
+        workPolicy: string;
+        employmentType: string;
+        experienceLevel: string;
+        search: string
+    }) => void;
 };
 
-const JOB_TYPES = ['full-time', 'part-time', 'remote', 'hybrid', 'contract'];
+const JOB_TYPES = ['Permanent', 'Temporary', 'Internship'];
+const WORK_POLICIES = ['Remote', 'Hybrid', 'On-site'];
+const EMPLOYMENT_TYPES = ['Full time', 'Part time', 'Contract'];
+const EXPERIENCE_LEVELS = ['Junior', 'Mid-level', 'Senior'];
 
 export function FilterDrawer({ locations, departments, onFilter }: Props) {
     const [open, setOpen] = useState(false);
     const [loc, setLoc] = useState<string[]>([]);
     const [types, setTypes] = useState<string[]>([]);
     const [depts, setDepts] = useState<string[]>([]);
+    const [policies, setPolicies] = useState<string[]>([]);
+    const [empTypes, setEmpTypes] = useState<string[]>([]);
+    const [expLevels, setExpLevels] = useState<string[]>([]);
     const [search, setSearch] = useState('');
     const ref = useRef<HTMLDivElement>(null);
 
@@ -25,12 +39,23 @@ export function FilterDrawer({ locations, departments, onFilter }: Props) {
             location: loc[0] || '',
             jobType: types[0] || '',
             department: depts[0] || '',
+            workPolicy: policies[0] || '',
+            employmentType: empTypes[0] || '',
+            experienceLevel: expLevels[0] || '',
             search
         });
         setOpen(false);
     };
 
-    const clear = () => { setLoc([]); setTypes([]); setDepts([]); setSearch(''); };
+    const clear = () => {
+        setLoc([]);
+        setTypes([]);
+        setDepts([]);
+        setPolicies([]);
+        setEmpTypes([]);
+        setExpLevels([]);
+        setSearch('');
+    };
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
@@ -42,7 +67,20 @@ export function FilterDrawer({ locations, departments, onFilter }: Props) {
         if (open) ref.current?.focus();
     }, [open]);
 
-    const activeCount = loc.length + types.length + depts.length + (search ? 1 : 0);
+    const activeCount = loc.length + types.length + depts.length + policies.length + empTypes.length + expLevels.length + (search ? 1 : 0);
+
+    const handleSearchChange = (val: string) => {
+        setSearch(val);
+        onFilter({
+            location: loc[0] || '',
+            jobType: types[0] || '',
+            department: depts[0] || '',
+            workPolicy: policies[0] || '',
+            employmentType: empTypes[0] || '',
+            experienceLevel: expLevels[0] || '',
+            search: val
+        });
+    };
 
     return (
         <>
@@ -52,7 +90,7 @@ export function FilterDrawer({ locations, departments, onFilter }: Props) {
                     type="search"
                     placeholder="Search job titles..."
                     value={search}
-                    onChange={e => { setSearch(e.target.value); onFilter({ location: loc[0] || '', jobType: types[0] || '', department: depts[0] || '', search: e.target.value }); }}
+                    onChange={e => handleSearchChange(e.target.value)}
                     className="flex-1 px-4 py-3 rounded-full border text-sm min-h-[44px]"
                     aria-label="Search jobs"
                 />
@@ -79,21 +117,21 @@ export function FilterDrawer({ locations, departments, onFilter }: Props) {
                 aria-label="Filter results"
                 tabIndex={-1}
                 className={`fixed inset-x-0 bottom-0 bg-white rounded-t-2xl z-50 transform transition-transform ${open ? 'translate-y-0' : 'translate-y-full'}`}
-                style={{ maxHeight: '80vh' }}
+                style={{ maxHeight: '90vh' }}
             >
                 <div className="p-4 border-b flex justify-between items-center">
                     <h2 className="text-lg font-semibold">Filter Results</h2>
                     <button onClick={() => setOpen(false)} className="text-2xl p-2 min-w-[44px] min-h-[44px]" aria-label="Close">×</button>
                 </div>
 
-                <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(80vh - 140px)' }}>
+                <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
                     {/* Location */}
                     <div className="mb-6">
                         <h3 className="font-semibold mb-2">Location</h3>
                         <div className="flex flex-wrap gap-2">
-                            <Chip label="All Locations" active={loc.length === 0} onClick={() => setLoc([])} />
+                            <Chip label="All" active={loc.length === 0} onClick={() => setLoc([])} />
                             {locations.map(l => (
-                                <Chip key={l} label={l} active={loc.includes(l)} onClick={() => setLoc(toggle(loc, l))} />
+                                <Chip key={l} label={l} active={loc.includes(l)} onClick={() => setLoc([l])} />
                             ))}
                         </div>
                     </div>
@@ -102,9 +140,39 @@ export function FilterDrawer({ locations, departments, onFilter }: Props) {
                     <div className="mb-6">
                         <h3 className="font-semibold mb-2">Job Type</h3>
                         <div className="flex flex-wrap gap-2">
-                            <Chip label="All Types" active={types.length === 0} onClick={() => setTypes([])} />
+                            <Chip label="All" active={types.length === 0} onClick={() => setTypes([])} />
                             {JOB_TYPES.map(t => (
-                                <Chip key={t} label={t} active={types.includes(t)} onClick={() => setTypes(toggle(types, t))} />
+                                <Chip key={t} label={t} active={types.includes(t)} onClick={() => setTypes([t])} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Work Policy */}
+                    <div className="mb-6">
+                        <h3 className="font-semibold mb-2">Work Policy</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {WORK_POLICIES.map(p => (
+                                <Chip key={p} label={p} active={policies.includes(p)} onClick={() => setPolicies(toggle(policies, p))} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Employment Type */}
+                    <div className="mb-6">
+                        <h3 className="font-semibold mb-2">Employment Type</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {EMPLOYMENT_TYPES.map(e => (
+                                <Chip key={e} label={e} active={empTypes.includes(e)} onClick={() => setEmpTypes(toggle(empTypes, e))} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Experience Level */}
+                    <div className="mb-6">
+                        <h3 className="font-semibold mb-2">Experience Level</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {EXPERIENCE_LEVELS.map(ex => (
+                                <Chip key={ex} label={ex} active={expLevels.includes(ex)} onClick={() => setExpLevels(toggle(expLevels, ex))} />
                             ))}
                         </div>
                     </div>
@@ -112,13 +180,9 @@ export function FilterDrawer({ locations, departments, onFilter }: Props) {
                     {/* Department */}
                     <div className="mb-6">
                         <h3 className="font-semibold mb-2">Department</h3>
-                        <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
                             {departments.map(d => (
-                                <label key={d} className="flex items-center gap-3 min-h-[44px]">
-                                    <input type="checkbox" checked={depts.includes(d)} onChange={() => setDepts(toggle(depts, d))}
-                                        className="w-5 h-5 rounded" />
-                                    <span>{d}</span>
-                                </label>
+                                <Chip key={d} label={d} active={depts.includes(d)} onClick={() => setDepts(toggle(depts, d))} />
                             ))}
                         </div>
                     </div>

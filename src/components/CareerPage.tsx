@@ -16,11 +16,28 @@ export function CareerPage({ company, jobs }: Props) {
     const locs = [...new Set(jobs.map(j => j.location).filter(Boolean))];
     const depts = [...new Set(jobs.map(j => j.department).filter(Boolean))];
 
-    const handleFilter = (f: { location: string; jobType: string; department: string; search: string }) => {
+    const handleFilter = (f: {
+        location: string;
+        jobType: string;
+        department: string;
+        workPolicy: string;
+        employmentType: string;
+        experienceLevel: string;
+        search: string
+    }) => {
+        // Special requirement for Berlin filter
+        if (f.location === 'Berlin, Germany') {
+            window.location.href = '/berlin/careers';
+            return;
+        }
+
         let r = jobs;
         if (f.location) r = r.filter(j => j.location === f.location);
         if (f.jobType) r = r.filter(j => j.job_type === f.jobType);
         if (f.department) r = r.filter(j => j.department === f.department);
+        if (f.workPolicy) r = r.filter(j => j.work_policy === f.workPolicy);
+        if (f.employmentType) r = r.filter(j => j.employment_type === f.employmentType);
+        if (f.experienceLevel) r = r.filter(j => j.experience_level === f.experienceLevel);
         if (f.search) r = r.filter(j => j.title.toLowerCase().includes(f.search.toLowerCase()));
         setFiltered(r);
     };
